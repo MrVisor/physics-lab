@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Physics Lab — Виртуальная физическая лаборатория</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* ── СВЕТЛАЯ ПАЛИТРА ── */
+  --bg0:   #111111;
+  --bg1:   #1a1a1a;
+  --bg2:   #222222;
+  --b1:    #333333;
+  --b2:    #444444;
+  --acc:   #e8e8e8;
+  --accD:  #888888;
+  --green: #5fcc7a;
+  --amber: #e8a84a;
+  --red:   #e05555;
+  --txt:   #d8d8d8;
+  --txtD:  #777777;
+  --txtB:  #f0f0f0;
+  --fD: 'Orbitron', monospace;
+  --fU: 'Rajdhani', sans-serif;
+  --fM: 'Space Mono', monospace;
+}
+
+html, body { height: 100%; background: var(--bg0); color: var(--txt); font-family: var(--fU); overflow: hidden; }
+
+/* ── APP LAYOUT ── */
+#app {
+  display: grid;
+  grid-template-rows: 60px 1fr 56px;
+  height: 100vh;
+  min-width: 900px;
+}
+
+/* ── HEADER ── */
+header {
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--b1);
+}
+.logo {
+  font-family: var(--fD);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: var(--acc);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.logo span { color: var(--accD); }
+.logo-sub {
+  font-family: var(--fU);
+  font-size: 11px;
+  color: var(--txtD);
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-weight: 500;
+}
+.divider { width: 1px; height: 28px; background: var(--b1); flex-shrink: 0; }
+.exp-nav { display: flex; gap: 4px; flex: 1; overflow-x: auto; }
+.exp-nav::-webkit-scrollbar { display: none; }
+.exp-tab {
+  background: transparent;
+  border: 1px solid var(--b1);
+  color: var(--txtD);
+  font-family: var(--fU);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 18px;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+  position: relative;
+  border-radius: 2px;
+}
+.exp-tab::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0; right: 0;
+  height: 2px;
+  background: var(--acc);
+  transform: scaleX(0);
+  transition: transform .15s;
+}
+.exp-tab:hover { color: var(--txt); border-color: var(--b2); background: var(--bg2); }
+.exp-tab.active { color: var(--acc); border-color: var(--b2); background: var(--bg2); }
+.exp-tab.active::after { transform: scaleX(1); }
+
+/* ── WORKSPACE ── */
+.workspace {
+  display: grid;
+  grid-template-columns: 268px 1fr 288px;
+  overflow: hidden;
+}
+
+/* ── PANELS ── */
+.panel {
+  background: var(--bg1);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.panel-L { border-right: 1px solid var(--b1); }
+.panel-R { border-left: 1px solid var(--b1); }
+.panel::-webkit-scrollbar { width: 4px; }
+.panel::-webkit-scrollbar-track { background: transparent; }
+.panel::-webkit-scrollbar-thumb { background: var(--b2); border-radius: 2px; }
+
+.ps {
+  padding: 16px 16px;
+  border-bottom: 1px solid var(--b1);
+}
+.ps-title {
+  font-family: var(--fU);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--accD);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--b1);
+}
+
+/* ── PARAMS ── */
+.p-row { margin-bottom: 16px; }
+.p-row:last-child { margin-bottom: 0; }
+.p-lbl {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--txt);
+  margin-bottom: 6px;
+}
+.p-val {
+  font-family: var(--fM);
+  font-size: 11px;
+  color: var(--acc);
+  background: var(--bg2);
+  padding: 1px 6px;
+  border-radius: 2px;
+}
+input[type=range] {
+  width: 100%;
+  height: 3px;
+  background: var(--b2);
+  outline: none;
+  border-radius: 2px;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  background: var(--acc);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid var(--bg1);
+}
+input[type=range]:hover::-webkit-slider-thumb { background: #ffffff; }
+
+.exp-desc {
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--txtD);
+  font-weight: 500;
+}
+
+/* ── VIEWPORT ── */
+.vp-wrap {
+  position: relative;
+  background: var(--bg0);
+  overflow: hidden;
+}
+#c3d { display: block; width: 100%; height: 100%; }
+
+.hud {
+  position: absolute;
+  top: 14px;
+  left: 18px;
+  pointer-events: none;
+  user-select: none;
+  background: rgba(17,17,17,0.75);
+  padding: 8px 14px;
+  border-radius: 4px;
+  border-left: 3px solid var(--acc);
+}
+.hud-time {
+  font-family: var(--fD);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--acc);
+  letter-spacing: 1px;
+}
+.hud-status {
+  font-family: var(--fU);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accD);
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+}
+
+.cam-hint {
+  position: absolute;
+  bottom: 12px;
+  right: 14px;
+  font-size: 11px;
+  color: var(--b2);
+  pointer-events: none;
+  user-select: none;
+  background: rgba(17,17,17,0.6);
+  padding: 4px 10px;
+  border-radius: 3px;
+}
+
+/* ── MEASUREMENTS ── */
+.m-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--b1);
+  gap: 8px;
+}
+.m-row:last-child { border-bottom: none; }
+.m-lbl { font-size: 12px; font-weight: 500; color: var(--txtD); flex-shrink: 0; }
+.m-val { font-family: var(--fM); font-size: 12px; color: var(--green); text-align: right; font-weight: 700; }
+.m-val.na  { color: var(--txtD); font-weight: 400; }
+.m-val.hi  { color: var(--acc); }
+.m-val.done { color: var(--amber); }
+
+/* ── COMPARISON ── */
+.cmp-ctx {
+  font-size: 11.5px;
+  color: var(--txtD);
+  margin-bottom: 12px;
+  line-height: 1.6;
+  font-weight: 500;
+  background: var(--bg2);
+  padding: 7px 10px;
+  border-radius: 3px;
+  border-left: 2px solid var(--b2);
+}
+.cmp-header {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 6px;
+  padding: 4px 0 6px;
+  border-bottom: 1px solid var(--b2);
+  margin-bottom: 2px;
+}
+.cmp-h { font-size: 10px; font-weight: 700; color: var(--accD); text-transform: uppercase; letter-spacing: 0.5px; }
+.cmp-h:nth-child(2), .cmp-h:nth-child(3) { text-align: right; }
+.cmp-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 6px;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--b1);
+}
+.cmp-row:last-child { border-bottom: none; }
+.cmp-src { font-size: 12px; color: var(--txt); font-weight: 500; }
+.cmp-val { font-family: var(--fM); font-size: 11px; color: var(--txtB); text-align: right; }
+.cmp-err { font-family: var(--fM); font-size: 10px; text-align: right; min-width: 44px; font-weight: 700; }
+.cmp-live { background: #1a1a2e; border-radius: 3px; padding: 7px 6px !important; margin-top: 2px; }
+.err-ok  { color: var(--green); }
+.err-md  { color: var(--amber); }
+.err-hi  { color: var(--red); }
+
+/* Bar chart */
+.bar-chart { margin: 10px 0 4px; }
+.bc-row { margin-bottom: 10px; }
+.bc-row:last-child { margin-bottom: 0; }
+.bc-lbl {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--txt);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+.bc-lbl span:last-child { font-family: var(--fM); font-size: 10px; }
+.bc-track { background: var(--bg2); height: 7px; border-radius: 4px; overflow: hidden; border: 1px solid var(--b1); }
+.bc-fill { height: 100%; border-radius: 4px; transition: width .5s ease; }
+
+/* ── DISCLAIMER ── */
+.disc-box {
+  background: var(--bg2);
+  border: 1px solid var(--b2);
+  border-radius: 4px;
+  padding: 10px 12px;
+}
+.disc-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--amber);
+  margin-bottom: 7px;
+  letter-spacing: 0.3px;
+}
+.disc-txt {
+  font-size: 11.5px;
+  line-height: 1.75;
+  color: var(--txtD);
+  font-weight: 500;
+}
+.disc-txt strong { color: var(--txt); font-weight: 700; }
+
+/* ── TOOLBAR ── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  background: var(--bg1);
+  border-top: 1px solid var(--b1);
+}
+.btn {
+  background: var(--bg2);
+  border: 1px solid var(--b2);
+  color: var(--txtD);
+  font-family: var(--fU);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 8px 22px;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+  border-radius: 3px;
+  letter-spacing: 0.3px;
+}
+.btn:hover { border-color: var(--acc); color: var(--acc); background: #2a2a2a; }
+.btn-p {
+  border-color: var(--accD);
+  color: var(--acc);
+  background: #282828;
+}
+.btn-p:hover, .btn-p.on { background: #303030; border-color: var(--acc); }
+.tb-sep { width: 1px; height: 24px; background: var(--b1); }
+.tb-hint { font-size: 11px; color: var(--txtD); margin-left: auto; font-weight: 500; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">⚛ PHYSICS<span> /</span>LAB</div>
+    <div class="logo-sub">Виртуальная физическая лаборатория</div>
+    <div class="divider"></div>
+    <div class="exp-nav" id="exp-nav"></div>
+  </header>
+
+  <!-- WORKSPACE -->
+  <div class="workspace">
+
+    <!-- LEFT PANEL -->
+    <div class="panel panel-L" id="panL">
+      <div class="ps">
+        <div class="ps-title">Параметры эксперимента</div>
+        <div id="params"></div>
+      </div>
+      <div class="ps">
+        <div class="ps-title">Что происходит</div>
+        <p class="exp-desc" id="edesc"></p>
+      </div>
+    </div>
+
+    <!-- 3D VIEWPORT -->
+    <div class="vp-wrap">
+      <canvas id="c3d"></canvas>
+      <div class="hud">
+        <div class="hud-time" id="hudT">t = 0.000 с</div>
+        <div class="hud-status" id="hudS">Готов к запуску</div>
+      </div>
+      <div class="cam-hint">🖱 Перетащить мышью — вращение камеры  ·  Колёсико — приближение/удаление</div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="panel panel-R" id="panR">
+      <div class="ps">
+        <div class="ps-title">Показатели симуляции</div>
+        <div id="meas"></div>
+      </div>
+      <div class="ps">
+        <div class="ps-title">Сравнение с данными из работы</div>
+        <div id="cmp"></div>
+      </div>
+      <div class="ps">
+        <div class="ps-title">О данной симуляции</div>
+        <div class="disc-box">
+          <div class="disc-title">⚠ Почему здесь не Unity или Unreal Engine?</div>
+          <p class="disc-txt">
+            Игровые движки Unity и Unreal Engine — это отдельные программы,
+            которые устанавливаются на компьютер (Unreal Engine занимает около 60 ГБ).
+            Запустить их прямо в браузере технически невозможно.<br><br>
+            Данный сайт использует <strong>собственный физический движок</strong>,
+            написанный на JavaScript. Он реализует тот же метод расчёта физики
+            (полунеявный метод Эйлера), который применяется в Unity,
+            и даёт <strong>сопоставимые результаты</strong> с экспериментальными данными
+            исследовательской работы.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /workspace -->
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <button class="btn btn-p" id="btnP">▶ Запустить симуляцию</button>
+    <button class="btn" id="btnR">↺ Сбросить</button>
+    <div class="tb-sep"></div>
+    <span class="tb-hint">Индивидуальный проект · Капустин Никита Сергеевич · СОШ №27 · 2025</span>
+  </div>
+
+</div><!-- /app -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════════════════════
+const G = 9.81; // m/s²
+
+const CLR = {
+  ball1:   0x00d4ff,
+  ball2:   0xff3d5a,
+  block:   0xff8c42,
+  bob:     0x00e67a,
+  rod:     0x7a9ab8,
+  ramp:    0x1e3a5a,
+  ground:  0x080e1a,
+  grid:    0x1a3050,
+  pivot:   0x8899bb,
+  track:   0x1a2e48,
+};
+
+// Paper data for comparison panel
+const PAPER = {
+  freeFall: {
+    ctx: 'Высота 2 м / масса 100 г',
+    metric: 'Время падения',
+    unit: 'с',
+    rows: [
+      { src: 'Теория (формула)',  val: '0.639 с',         err: '0%',    cls: 'err-ok' },
+      { src: 'Реальный опыт',     val: '0.639 ± 0.003 с', err: '≈0%',   cls: 'err-ok' },
+      { src: 'Unity / PhysX',     val: '0.639 с',         err: '0.0%',  cls: 'err-ok' },
+      { src: 'Unreal Engine 5',   val: '0.640 с',         err: '+0.2%', cls: 'err-ok' },
+    ],
+    bars: [
+      { lbl: 'Теория',   val: 0.639, clr: '#00e67a' },
+      { lbl: 'Реальный', val: 0.639, clr: '#3a7bd5' },
+      { lbl: 'Unity',    val: 0.639, clr: '#00d4ff' },
+      { lbl: 'UE5',      val: 0.640, clr: '#ff8c42' },
+    ]
+  },
+  inclined: {
+    ctx: 'Угол 30° / μ=0.45 / L=1 м',
+    metric: 'Время скольжения',
+    unit: 'с',
+    rows: [
+      { src: 'Теория (формула)',  val: '1.36 с',         err: '0%',    cls: 'err-ok' },
+      { src: 'Реальный опыт',     val: '1.36 ± 0.02 с', err: '≈0%',   cls: 'err-ok' },
+      { src: 'Unity / PhysX',     val: '1.42 с',         err: '+4.4%', cls: 'err-md' },
+      { src: 'Unreal Engine 5',   val: '1.39 с',         err: '+2.2%', cls: 'err-ok' },
+    ],
+    bars: [
+      { lbl: 'Теория',   val: 1.36, clr: '#00e67a' },
+      { lbl: 'Реальный', val: 1.36, clr: '#3a7bd5' },
+      { lbl: 'Unity',    val: 1.42, clr: '#00d4ff' },
+      { lbl: 'UE5',      val: 1.39, clr: '#ff8c42' },
+    ]
+  },
+  pendulum: {
+    ctx: 'L=1 м / начальный угол 20°',
+    metric: 'Период колебаний',
+    unit: 'с',
+    rows: [
+      { src: 'Теория (формула)',  val: '2.006 с',         err: '0%',    cls: 'err-ok' },
+      { src: 'Реальный опыт',     val: '2.015 ± 0.007 с',err: '+0.4%', cls: 'err-ok' },
+      { src: 'Unity / PhysX',     val: '2.012 с',         err: '+0.3%', cls: 'err-ok' },
+      { src: 'Unreal Engine 5',   val: '2.009 с',         err: '+0.1%', cls: 'err-ok' },
+    ],
+    bars: [
+      { lbl: 'Теория',   val: 2.006, clr: '#00e67a' },
+      { lbl: 'Реальный', val: 2.015, clr: '#3a7bd5' },
+      { lbl: 'Unity',    val: 2.012, clr: '#00d4ff' },
+      { lbl: 'UE5',      val: 2.009, clr: '#ff8c42' },
+    ]
+  },
+  collision: {
+    ctx: 'Стальные шарики 30 г / v₀=0.48 м/с',
+    metric: 'Сохранение импульса / потери Eк',
+    unit: '%',
+    rows: [
+      { src: 'Теория (упругое)',  val: '100% / 0%',    err: '—',     cls: 'err-ok' },
+      { src: 'Реальный опыт',     val: '95.8% / 26%', err: '–4.2%', cls: 'err-md' },
+      { src: 'Unity (e=0.9)',     val: '99.2% / 8%',  err: '–0.8%', cls: 'err-ok' },
+      { src: 'UE5 / Chaos (e=0.9)', val: '99.5% / 6%', err: '–0.5%', cls: 'err-ok' },
+    ],
+    bars: [
+      { lbl: 'Теория',   val: 100,  clr: '#00e67a' },
+      { lbl: 'Реальный', val: 95.8, clr: '#3a7bd5' },
+      { lbl: 'Unity',    val: 99.2, clr: '#00d4ff' },
+      { lbl: 'UE5',      val: 99.5, clr: '#ff8c42' },
+    ]
+  }
+};
+
+const EXPS = [
+  {
+    id: 'freeFall',
+    name: 'Свободное падение',
+    short: 'Падение',
+    desc: 'Металлический шарик падает с заданной высоты без начальной скорости. Измеряется время падения и конечная скорость. Unity (PhysX) даёт погрешность 0.0%, Unreal Engine 5 (Chaos Physics) — 0.2%. Оба движка используют метод полунеявного Эйлера, что при нулевом сопротивлении воздуха практически совпадает с теорией.',
+    params: [
+      { id:'height', lbl:'Высота', unit:'м',  min:1,   max:10,  step:0.5,  def:2   },
+      { id:'mass',   lbl:'Масса',  unit:'кг', min:0.1, max:5,   step:0.1,  def:0.1 },
+      { id:'drag',   lbl:'Сопр. воздуха (cd)', unit:'', min:0, max:0.5, step:0.05, def:0 },
+    ],
+    paperKey: 'freeFall',
+    cam: { th:0.4, ph:1.15, r:7, ty:1.5 },
+  },
+  {
+    id: 'inclined',
+    name: 'Наклонная плоскость',
+    short: 'Нак. плоскость',
+    desc: 'Брусок скользит по наклонной плоскости под действием гравитации. Если трение слишком велико (sin α ≤ μ·cos α), брусок остаётся на месте — это физически верное поведение. Unity (PhysX) даёт погрешность +4.4% из-за упрощённой модели Кулона. Unreal Engine 5 (Chaos Physics) точнее — погрешность +2.2%, так как использует итеративный решатель контактных ограничений.',
+    params: [
+      { id:'angle',  lbl:'Угол наклона', unit:'°',   min:10, max:60,  step:1,    def:30   },
+      { id:'mu',     lbl:'Коэф. трения μ', unit:'', min:0.05,max:0.8, step:0.05, def:0.45 },
+      { id:'length', lbl:'Длина',         unit:'м',  min:0.5, max:3,  step:0.25, def:1    },
+    ],
+    paperKey: 'inclined',
+    cam: { th:0.6, ph:1.1, r:8, ty:1.2 },
+  },
+  {
+    id: 'pendulum',
+    name: 'Маятник',
+    short: 'Маятник',
+    desc: 'Математический маятник. Измеряется период колебаний и сравнивается с формулой T=2π√(L/g). Unity (PhysX) даёт погрешность +0.3%, Unreal Engine 5 (Chaos Physics) — +0.1%: UE5 точнее за счёт более высокой частоты шага физики (по умолчанию 120 Гц против 50 Гц в Unity). Симуляция демонстрирует постепенное накопление численной ошибки.',
+    params: [
+      { id:'length', lbl:'Длина нити', unit:'м', min:0.5, max:3,  step:0.25, def:1  },
+      { id:'angle',  lbl:'Нач. угол', unit:'°',  min:5,   max:45, step:5,    def:20 },
+    ],
+    paperKey: 'pendulum',
+    cam: { th:0.3, ph:1.0, r:6, ty:1.8 },
+  },
+  {
+    id: 'collision',
+    name: 'Упругое столкновение',
+    short: 'Столкновение',
+    desc: 'Два шарика сталкиваются. Реальное стальное столкновение даёт 26% потерь энергии (деформация, звук, трение). Unity (PhysX, e=0.9) теряет ≈8% Eк из-за импульсного метода решателя. Unreal Engine 5 (Chaos Physics, e=0.9) точнее — ≈6%, так как Chaos использует позиционную коррекцию, снижающую артефакты при импульсном решении.',
+    params: [
+      { id:'v1',          lbl:'Скорость шара 1', unit:'м/с', min:0.5, max:5,   step:0.5,  def:2    },
+      { id:'mass1',       lbl:'Масса шара 1',    unit:'кг',  min:0.01,max:0.2, step:0.01, def:0.03 },
+      { id:'mass2',       lbl:'Масса шара 2',    unit:'кг',  min:0.01,max:0.2, step:0.01, def:0.03 },
+      { id:'restitution', lbl:'Упругость e',     unit:'',    min:0.1, max:1.0, step:0.05, def:0.9  },
+    ],
+    paperKey: 'collision',
+    cam: { th:0.3, ph:1.1, r:9, ty:0.5 },
+  }
+];
+
+// ═══════════════════════════════════════════════════════════
+//  THREE.JS SCENE SETUP
+// ═══════════════════════════════════════════════════════════
+const canvas = document.getElementById('c3d');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setClearColor(0x4a4a4a);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x4a4a4a, 18, 55);
+
+const camera = new THREE.PerspectiveCamera(48, 1, 0.01, 100);
+
+// Ambient
+const ambL = new THREE.AmbientLight(0x1a2a44, 1.4);
+scene.add(ambL);
+
+const dirL = new THREE.DirectionalLight(0xffffff, 0.9);
+dirL.position.set(6, 10, 4);
+dirL.castShadow = true;
+dirL.shadow.mapSize.set(1024, 1024);
+dirL.shadow.camera.near = 0.5;
+dirL.shadow.camera.far = 40;
+dirL.shadow.camera.left = dirL.shadow.camera.bottom = -12;
+dirL.shadow.camera.right = dirL.shadow.camera.top = 12;
+scene.add(dirL);
+
+// Accent point light
+const pntL = new THREE.PointLight(0xffffff, 0.3, 25);
+pntL.position.set(-4, 6, 4);
+scene.add(pntL);
+
+// Grid + ground
+const gridH = new THREE.GridHelper(18, 18, 0x5a5a5a, 0x525252);
+scene.add(gridH);
+
+const gndGeo = new THREE.PlaneGeometry(18, 18);
+const gndMat = new THREE.MeshPhongMaterial({ color: 0x3a3a3a });
+const gnd = new THREE.Mesh(gndGeo, gndMat);
+gnd.rotation.x = -Math.PI / 2;
+gnd.position.y = -0.002;
+gnd.receiveShadow = true;
+scene.add(gnd);
+
+// ═══════════════════════════════════════════════════════════
+//  CAMERA CONTROLLER (orbit)
+// ═══════════════════════════════════════════════════════════
+const cam = {
+  th: 0.4, ph: 1.15, r: 7, ty: 1.5,
+  drag: false, lx: 0, ly: 0,
+
+  init() {
+    canvas.addEventListener('mousedown', e => { this.drag=true; this.lx=e.clientX; this.ly=e.clientY; canvas.style.cursor='grabbing'; });
+    window.addEventListener('mouseup', () => { this.drag=false; canvas.style.cursor='grab'; });
+    canvas.addEventListener('mousemove', e => {
+      if (!this.drag) return;
+      this.th -= (e.clientX - this.lx) * 0.007;
+      this.ph = Math.max(0.12, Math.min(1.45, this.ph + (e.clientY - this.ly) * 0.007));
+      this.lx = e.clientX; this.ly = e.clientY;
+      this.apply();
+    });
+    canvas.addEventListener('wheel', e => {
+      e.preventDefault();
+      this.r = Math.max(3, Math.min(20, this.r + e.deltaY * 0.012));
+      this.apply();
+    }, { passive: false });
+    canvas.style.cursor = 'grab';
+    this.apply();
+  },
+
+  set(cfg) {
+    this.th = cfg.th; this.ph = cfg.ph; this.r = cfg.r; this.ty = cfg.ty;
+    this.apply();
+  },
+
+  apply() {
+    const sp = Math.sin(this.ph), cp = Math.cos(this.ph);
+    camera.position.set(
+      this.r * sp * Math.cos(this.th),
+      this.r * cp + this.ty,
+      this.r * sp * Math.sin(this.th)
+    );
+    camera.lookAt(0, this.ty, 0);
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════════
+function mesh(geo, color, emissive = 0x000000, shininess = 90) {
+  const mat = new THREE.MeshPhongMaterial({ color, emissive, shininess });
+  const m = new THREE.Mesh(geo, mat);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  return m;
+}
+
+function glowSphere(r, color) {
+  const geo = new THREE.SphereGeometry(r, 32, 24);
+  const col = new THREE.Color(color);
+  const mat = new THREE.MeshPhongMaterial({
+    color: col,
+    emissive: col.clone().multiplyScalar(0.25),
+    shininess: 130,
+    specular: new THREE.Color(0xffffff),
+  });
+  const m = new THREE.Mesh(geo, mat);
+  m.castShadow = true;
+  return m;
+}
+
+function add(...objs) { objs.forEach(o => scene.add(o)); }
+function rem(...objs) { objs.forEach(o => scene.remove(o)); }
+
+// ═══════════════════════════════════════════════════════════
+//  EXPERIMENT: FREE FALL
+// ═══════════════════════════════════════════════════════════
+class FreeFallExp {
+  constructor() { this._objs = []; this.st = null; }
+
+  init(p) {
+    this.ball = glowSphere(0.22, CLR.ball1);
+    const mrkGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.04, 32);
+    this.marker = mesh(mrkGeo, 0x004455, 0x001122);
+    this.marker.position.y = 0.02;
+    this._objs = [this.ball, this.marker];
+    add(...this._objs);
+    this.reset(p);
+  }
+
+  reset(p) {
+    this.st = { y: p.height, vy: 0, t: 0, done: false,
+      height: p.height, mass: p.mass, drag: p.drag };
+    this.ball.position.set(0, p.height + 0.22, 0);
+  }
+
+  update(dt) {
+    const s = this.st;
+    if (s.done) return;
+    // Semi-implicit Euler (Unity PhysX)
+    // drag opposes velocity: F_drag = -cd * vy * |vy| (positive when falling)
+    const dragAcc = -(s.drag / s.mass) * s.vy * Math.abs(s.vy);
+    s.vy += (-G + dragAcc) * dt;
+    // Clamp to terminal velocity to prevent instability at high drag/low mass
+    const vTerm = (s.drag > 0) ? -Math.sqrt(G * s.mass / s.drag) : -999;
+    if (s.vy < vTerm) s.vy = vTerm;
+    s.y  += s.vy * dt;
+    s.t  += dt;
+    if (s.y <= 0.22) { s.y = 0.22; s.vy = 0; s.done = true; }
+    this.ball.position.y = s.y;
+  }
+
+  data() {
+    const s = this.st;
+    if (!s) return [];
+    const th = Math.sqrt(2 * s.height / G);
+    return [
+      { l: 'Время',            v: s.t.toFixed(3) + ' с',              c: 'hi' },
+      { l: 'Скорость',         v: Math.abs(s.vy).toFixed(3) + ' м/с', c: '' },
+      { l: 'Высота над полом', v: Math.max(0, s.y-0.22).toFixed(2) + ' м', c: '' },
+      { l: 'Теор. время (2м)', v: th.toFixed(3) + ' с',               c: 'na' },
+      { l: 'Статус',           v: s.done ? 'ПРИЗЕМЛИЛСЯ' : 'ПАДАЕТ',  c: s.done ? 'done' : '' },
+    ];
+  }
+
+  done() { return this.st && this.st.done; }
+  dispose() { rem(...this._objs); this._objs = []; }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXPERIMENT: INCLINED PLANE
+// ═══════════════════════════════════════════════════════════
+class InclinedPlaneExp {
+  constructor() { this._objs = []; this.st = null; this._a = 0; this._L = 1; }
+
+  init(p) { this._build(p); this.reset(p); }
+
+  _build(p) {
+    rem(...this._objs); this._objs = [];
+    const a = p.angle * Math.PI / 180;
+    const L = p.length;
+    this._a = a; this._L = L;
+
+    // Ramp surface (thin box)
+    const rampGeo = new THREE.BoxGeometry(L, 0.1, 0.65);
+    const rampMat = new THREE.MeshPhongMaterial({ color: CLR.ramp, emissive: 0x0a1525, transparent: true, opacity: 0.88 });
+    this.ramp = new THREE.Mesh(rampGeo, rampMat);
+    this.ramp.rotation.z = a;
+    // Position so bottom-left corner is at origin
+    this.ramp.position.set(
+      L/2 * Math.cos(a) - 0.05 * Math.sin(a),
+      L/2 * Math.sin(a) + 0.05 * Math.cos(a),
+      0
+    );
+    this.ramp.castShadow = true;
+    this.ramp.receiveShadow = true;
+
+    // Support column
+    const hSupp = L * Math.sin(a);
+    const suppGeo = new THREE.BoxGeometry(0.08, hSupp, 0.65);
+    const supp = mesh(suppGeo, 0x132030);
+    supp.position.set(L * Math.cos(a), hSupp / 2, 0);
+
+    // Block
+    const blkGeo = new THREE.BoxGeometry(0.28, 0.28, 0.28);
+    this.block = mesh(blkGeo, CLR.block, 0x331100);
+    this.block.rotation.z = a;
+
+    this._objs = [this.ramp, supp, this.block];
+    add(...this._objs);
+  }
+
+  // Block center when at ramp-distance s from bottom
+  _pos(s) {
+    const a = this._a;
+    return { x: s*Math.cos(a) - 0.19*Math.sin(a), y: s*Math.sin(a) + 0.19*Math.cos(a) };
+  }
+
+  reset(p) {
+    const needRebuild = !this.st ||
+      Math.abs(this.st.angle - p.angle) > 0.001 ||
+      Math.abs(this.st.length - p.length) > 0.001;
+    if (needRebuild) this._build(p);
+
+    this.st = { s: p.length, vs: 0, t: 0, done: false, static: false,
+      angle: p.angle, mu: p.mu, length: p.length };
+    const pos = this._pos(p.length);
+    this.block.position.set(pos.x, pos.y, 0);
+    this.block.rotation.z = this._a;
+  }
+
+  update(dt) {
+    const s = this.st;
+    if (s.done || s.static) return;
+    const a = s.angle * Math.PI / 180;
+    const sinA = Math.sin(a), cosA = Math.cos(a);
+    if (sinA <= s.mu * cosA) { s.static = true; return; } // static friction holds — block doesn't move
+
+    const acc = G * (sinA - s.mu * cosA);
+    s.vs += acc * dt;
+    s.s  -= s.vs * dt;
+    s.t  += dt;
+    if (s.s <= 0) { s.s = 0; s.done = true; }
+
+    const pos = this._pos(Math.max(0, s.s));
+    this.block.position.set(pos.x, pos.y, 0);
+  }
+
+  data() {
+    const s = this.st;
+    if (!s) return [];
+    const a = s.angle * Math.PI / 180;
+    const willMove = Math.sin(a) > s.mu * Math.cos(a);
+    const acc = willMove ? G * (Math.sin(a) - s.mu * Math.cos(a)) : 0;
+    const thT = acc > 0 ? Math.sqrt(2 * s.length / acc) : Infinity;
+    const pct = ((1 - s.s / s.length) * 100).toFixed(0);
+    let status, statusCls;
+    if (s.static)       { status = 'УДЕРЖИВАЕТСЯ ТРЕНИЕМ'; statusCls = 'na'; }
+    else if (s.done)    { status = 'ДОСТИГ ОСНОВАНИЯ';     statusCls = 'done'; }
+    else                { status = 'СКОЛЬЗИТ';              statusCls = ''; }
+    return [
+      { l: 'Время',          v: s.t.toFixed(3) + ' с',                         c: 'hi' },
+      { l: 'Скорость',       v: s.vs.toFixed(3) + ' м/с',                       c: '' },
+      { l: 'Ускорение',      v: acc.toFixed(3) + ' м/с²',                       c: '' },
+      { l: 'Теор. время',    v: isFinite(thT) ? thT.toFixed(3) + ' с' : 'не двинется', c: 'na' },
+      { l: 'Прогресс',       v: pct + '%',                                       c: '' },
+      { l: 'Статус',         v: status,                                          c: statusCls },
+    ];
+  }
+
+  done() { return this.st && (this.st.done || this.st.static); }
+  dispose() { rem(...this._objs); this._objs = []; }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXPERIMENT: PENDULUM
+// ═══════════════════════════════════════════════════════════
+class PendulumExp {
+  constructor() { this._objs = []; this.st = null; this._pY = 0; }
+
+  init(p) {
+    this._pY = p.length + 0.6;
+
+    // Pivot
+    const pvtGeo = new THREE.SphereGeometry(0.07, 16, 12);
+    this.pvt = mesh(pvtGeo, CLR.pivot, 0x111a28);
+    this.pvt.position.set(0, this._pY, 0);
+
+    // Rod (unit length, scaled later)
+    const rodGeo = new THREE.CylinderGeometry(0.022, 0.022, 1, 10);
+    this.rod = mesh(rodGeo, CLR.rod);
+
+    // Bob
+    this.bob = glowSphere(0.17, CLR.bob);
+
+    // Ceiling bar
+    const barGeo = new THREE.BoxGeometry(1.2, 0.06, 0.06);
+    this.bar = mesh(barGeo, 0x1a3050);
+    this.bar.position.set(0, this._pY + 0.06, 0);
+
+    this._objs = [this.pvt, this.rod, this.bob, this.bar];
+    add(...this._objs);
+    this.reset(p);
+  }
+
+  reset(p) {
+    this._pY = p.length + 0.6;
+    this.pvt.position.y = this._pY;
+    this.bar.position.y = this._pY + 0.06;
+
+    const a0 = p.angle * Math.PI / 180;
+    this.st = {
+      ang: a0, om: 0, t: 0,
+      length: p.length,
+      prevAng: a0, prevDir: Math.sign(a0),
+      halfCrossT: null, period: null, nHalf: 0,
+    };
+    this._updatePose();
+  }
+
+  _updatePose() {
+    const s = this.st;
+    const L = s.length;
+    const bx = Math.sin(s.ang) * L;
+    const by = this._pY - Math.cos(s.ang) * L;
+    this.bob.position.set(bx, by, 0);
+    this.rod.position.set(bx/2, (this._pY + by)/2, 0);
+    this.rod.rotation.z = Math.PI + s.ang;
+    this.rod.scale.y = L;
+  }
+
+  update(dt) {
+    const s = this.st;
+    // Semi-implicit Euler
+    s.om  += -(G / s.length) * Math.sin(s.ang) * dt;
+    const prevAng = s.ang;
+    s.ang += s.om * dt;
+    s.t   += dt;
+
+    // Detect half-periods (zero crossing)
+    if (prevAng * s.ang <= 0 && Math.abs(prevAng) > 0.001) {
+      s.nHalf++;
+      if (s.nHalf === 1) s.halfCrossT = s.t;
+      else if (s.nHalf >= 3 && (s.nHalf - 1) % 2 === 0) {
+        s.period = (s.t - s.halfCrossT) / Math.floor((s.nHalf - 1) / 2);
+      }
+    }
+
+    this._updatePose();
+  }
+
+  data() {
+    const s = this.st;
+    if (!s) return [];
+    const thT = 2 * Math.PI * Math.sqrt(s.length / G);
+    return [
+      { l: 'Время',           v: s.t.toFixed(3) + ' с',              c: 'hi' },
+      { l: 'Угол',            v: (s.ang * 180 / Math.PI).toFixed(2) + '°', c: '' },
+      { l: 'Угл. скорость',   v: s.om.toFixed(4) + ' рад/с',          c: '' },
+      { l: 'Измер. период',   v: s.period ? s.period.toFixed(4)+' с' : 'замеряется…', c: s.period ? '' : 'na' },
+      { l: 'Теор. период',    v: thT.toFixed(4) + ' с',               c: 'na' },
+      { l: 'Полных колебаний',v: Math.floor(s.nHalf / 2).toString(),   c: '' },
+    ];
+  }
+
+  done() { return false; } // pendulum runs forever
+  dispose() { rem(...this._objs); this._objs = []; }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXPERIMENT: ELASTIC COLLISION
+// ═══════════════════════════════════════════════════════════
+class CollisionExp {
+  constructor() { this._objs = []; this.st = null; }
+
+  init(p) {
+    this.b1 = glowSphere(0.18, CLR.ball1);
+    this.b2 = glowSphere(0.18, CLR.ball2);
+    const trkGeo = new THREE.BoxGeometry(10, 0.03, 0.32);
+    this.track = mesh(trkGeo, CLR.track);
+    this.track.position.set(0, 0.015, 0);
+    this._objs = [this.b1, this.b2, this.track];
+    add(...this._objs);
+    this.reset(p);
+  }
+
+  reset(p) {
+    const R = 0.18;
+    this.st = {
+      x1: -3.5, v1: p.v1,
+      x2: 0,    v2: 0,
+      m1: p.mass1, m2: p.mass2,
+      e:  p.restitution, R,
+      hit: false, stopped: false,
+      t: 0, p0: p.mass1 * p.v1,
+      preV1: p.v1, preV2: 0,
+      postV1: null, postV2: null,
+    };
+    this.b1.position.set(-3.5, R, 0);
+    this.b2.position.set(0,    R, 0);
+  }
+
+  update(dt) {
+    const s = this.st;
+    if (s.stopped) return;
+
+    if (!s.hit) {
+      s.x1 += s.v1 * dt;
+      s.t  += dt;
+      // Check collision: when spheres touch
+      if (s.x1 + s.R >= s.x2 - s.R) {
+        s.hit = true;
+        s.preV1 = s.v1; s.preV2 = s.v2;
+        // Collision response with restitution e
+        const m1=s.m1, m2=s.m2, e=s.e;
+        const v1p = ((m1 - e*m2)*s.v1 + (1+e)*m2*s.v2) / (m1+m2);
+        const v2p = ((m2 - e*m1)*s.v2 + (1+e)*m1*s.v1) / (m1+m2);
+        s.v1 = v1p; s.v2 = v2p;
+        s.postV1 = v1p; s.postV2 = v2p;
+        // Push apart to avoid overlap
+        s.x1 = s.x2 - 2*s.R - 0.002;
+      }
+    } else {
+      s.x1 += s.v1 * dt;
+      s.x2 += s.v2 * dt;
+      s.t  += dt;
+      if (Math.abs(s.x1) > 5.5 && Math.abs(s.x2) > 5.5) s.stopped = true;
+    }
+
+    const clamp = x => Math.max(-5.2, Math.min(5.2, x));
+    this.b1.position.set(clamp(s.x1), s.R, 0);
+    this.b2.position.set(clamp(s.x2), s.R, 0);
+  }
+
+  data() {
+    const s = this.st;
+    if (!s) return [];
+    const pNow = s.m1*s.v1 + s.m2*s.v2;
+    const momPct = s.p0 !== 0 ? (Math.abs(pNow / s.p0) * 100).toFixed(1) : '100.0';
+    const ke0 = 0.5*s.m1*s.preV1*s.preV1 + 0.5*s.m2*s.preV2*s.preV2;
+    const ke1 = 0.5*s.m1*s.v1*s.v1 + 0.5*s.m2*s.v2*s.v2;
+    const eLoss = ke0 > 0 ? ((ke0-ke1)/ke0*100).toFixed(1) : '0.0';
+    const rows = [
+      { l:'Время',           v: s.t.toFixed(3)+' с',    c:'hi' },
+      { l:'V₁',              v: s.v1.toFixed(4)+' м/с', c:'' },
+      { l:'V₂',              v: s.v2.toFixed(4)+' м/с', c:'' },
+      { l:'Сохр. импульса',  v: momPct+'%',              c:'' },
+      { l:'Потери Eк',       v: eLoss+'%',               c:'' },
+      { l:'Статус',          v: !s.hit?'ДО УДАРА':s.stopped?'ЗАВЕРШЕНО':'ПОСЛЕ УДАРА',
+         c: s.stopped?'done':'' },
+    ];
+    return rows;
+  }
+
+  done() { return this.st && this.st.stopped; }
+  dispose() { rem(...this._objs); this._objs = []; }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UI
+// ═══════════════════════════════════════════════════════════
+const ui = {
+  // Build experiment tabs
+  buildTabs() {
+    const nav = document.getElementById('exp-nav');
+    EXPS.forEach((e, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'exp-tab' + (i===0 ? ' active' : '');
+      btn.textContent = e.short;
+      btn.dataset.i = i;
+      nav.appendChild(btn);
+    });
+  },
+
+  // Build param sliders for experiment idx
+  buildParams(idx) {
+    const exp = EXPS[idx];
+    document.getElementById('edesc').textContent = exp.desc;
+    const con = document.getElementById('params');
+    con.innerHTML = '';
+    exp.params.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'p-row';
+      const places = p.step < 0.1 ? 2 : p.step < 1 ? 1 : 0;
+      const lbl = document.createElement('div');
+      lbl.className = 'p-lbl';
+      const name = document.createElement('span');
+      name.textContent = p.lbl + (p.unit ? ' ('+p.unit+')' : '');
+      const val = document.createElement('span');
+      val.className = 'p-val';
+      val.textContent = p.def.toFixed(places);
+      lbl.appendChild(name); lbl.appendChild(val);
+      const inp = document.createElement('input');
+      inp.type='range'; inp.min=p.min; inp.max=p.max; inp.step=p.step; inp.value=p.def;
+      inp.dataset.pid = p.id;
+      inp.addEventListener('input', () => val.textContent = parseFloat(inp.value).toFixed(places));
+      row.appendChild(lbl); row.appendChild(inp);
+      con.appendChild(row);
+    });
+  },
+
+  // Get current param values
+  getParams(idx) {
+    const p = {};
+    EXPS[idx].params.forEach(ep => {
+      const el = document.querySelector(`[data-pid="${ep.id}"]`);
+      p[ep.id] = el ? parseFloat(el.value) : ep.def;
+    });
+    return p;
+  },
+
+  setTab(idx) {
+    document.querySelectorAll('.exp-tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+  },
+
+  // Live measurements
+  setMeas(rows) {
+    document.getElementById('meas').innerHTML = rows.map(r =>
+      `<div class="m-row"><span class="m-lbl">${r.l}</span><span class="m-val ${r.c||''}">${r.v}</span></div>`
+    ).join('');
+  },
+
+  // Comparison with paper data + live simulation result
+  setCmp(key, liveVal) {
+    const d = PAPER[key];
+    if (!d) return;
+
+    // Build rows: paper rows + live sim row
+    const rows = [...d.rows];
+    if (liveVal !== undefined) {
+      // Compute error vs theory
+      const thNum = parseFloat(d.rows[0].val);
+      const livePct = thNum > 0 ? (((liveVal - thNum) / thNum) * 100).toFixed(1) : '—';
+      const errCls = Math.abs(parseFloat(livePct)) < 1 ? 'err-ok'
+                   : Math.abs(parseFloat(livePct)) < 5 ? 'err-md' : 'err-hi';
+      const sign = parseFloat(livePct) > 0 ? '+' : '';
+      rows.push({
+        src: '★ Данная симуляция',
+        val: liveVal.toFixed(3) + ' ' + d.unit,
+        err: liveVal > 0 ? sign + livePct + '%' : '—',
+        cls: liveVal > 0 ? errCls : 'na',
+      });
+    } else {
+      rows.push({ src: '★ Данная симуляция', val: 'запустите эксперимент', err: '—', cls: 'na' });
+    }
+
+    const maxB = Math.max(...d.bars.map(b => b.val));
+    const barsHTML = d.bars.map(b => `
+      <div class="bc-row">
+        <div class="bc-lbl"><span>${b.lbl}</span><span>${b.val}</span></div>
+        <div class="bc-track"><div class="bc-fill" style="width:${(b.val/maxB*100).toFixed(1)}%;background:${b.clr};"></div></div>
+      </div>`).join('');
+
+    const rowsHTML = `
+      <div class="cmp-header">
+        <span class="cmp-h">Источник</span>
+        <span class="cmp-h">Результат</span>
+        <span class="cmp-h">Погр.</span>
+      </div>` +
+      rows.map(r =>
+        `<div class="cmp-row ${r.src.startsWith('★') ? 'cmp-live' : ''}">
+           <span class="cmp-src">${r.src}</span>
+           <span class="cmp-val">${r.val}</span>
+           <span class="cmp-err ${r.cls}">${r.err}</span>
+         </div>`
+      ).join('');
+
+    document.getElementById('cmp').innerHTML = `
+      <div class="cmp-ctx"><strong>${d.metric}</strong><br>${d.ctx}</div>
+      <div class="bar-chart">${barsHTML}</div>
+      <div style="margin-top:10px;">${rowsHTML}</div>`;
+  },
+
+  setHUD(t, status) {
+    document.getElementById('hudT').textContent = `t = ${t.toFixed(3)} с`;
+    document.getElementById('hudS').textContent = status;
+  },
+
+  setPlay(on) {
+    const btn = document.getElementById('btnP');
+    btn.textContent = on ? '⏸ Приостановить' : '▶ Запустить симуляцию';
+    btn.classList.toggle('on', on);
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+//  APP
+// ═══════════════════════════════════════════════════════════
+const app = {
+  expIdx: 0,
+  exp: null,
+  running: false,
+  lastT: null,
+  simT: 0,
+  liveResult: undefined,  // the key metric value after experiment done
+
+  init() {
+    ui.buildTabs();
+    cam.init();
+    this._bindUI();
+    this._resize();
+    window.addEventListener('resize', () => this._resize());
+    this.load(0);
+    this._loop();
+  },
+
+  load(idx) {
+    if (this.exp) { this.exp.dispose(); this.exp = null; }
+    this.running = false; this.simT = 0; this.lastT = null;
+    this.liveResult = undefined;
+    ui.setPlay(false); ui.setTab(idx);
+    ui.setHUD(0, 'Готов к запуску');
+    this.expIdx = idx;
+
+    const e = EXPS[idx];
+    cam.set(e.cam);
+    ui.buildParams(idx);
+
+    // Auto-reset when any slider changes
+    document.getElementById('params').addEventListener('input', () => {
+      this._softReset();
+    });
+
+    const p = ui.getParams(idx);
+    this.exp = [FreeFallExp, InclinedPlaneExp, PendulumExp, CollisionExp][idx];
+    this.exp = new this.exp();
+    this.exp.init(p);
+
+    ui.setMeas(this.exp.data());
+    ui.setCmp(e.paperKey, undefined);
+  },
+
+  // Reset without stopping running state fully — stops sim, resets position
+  _softReset() {
+    this.running = false; this.simT = 0; this.lastT = null;
+    this.liveResult = undefined;
+    ui.setPlay(false);
+    this.exp.reset(ui.getParams(this.expIdx));
+    ui.setMeas(this.exp.data());
+    ui.setHUD(0, 'Готов к запуску');
+    ui.setCmp(EXPS[this.expIdx].paperKey, undefined);
+  },
+
+  reset() {
+    this._softReset();
+  },
+
+  // Extract the key metric from exp data for comparison
+  _extractLiveMetric(data) {
+    const id = EXPS[this.expIdx].id;
+    if (id === 'freeFall') {
+      const row = data.find(r => r.l === 'Время');
+      return row ? parseFloat(row.v) : undefined;
+    }
+    if (id === 'inclined') {
+      const row = data.find(r => r.l === 'Время');
+      return row ? parseFloat(row.v) : undefined;
+    }
+    if (id === 'pendulum') {
+      const row = data.find(r => r.l === 'Измер. период');
+      const v = row ? parseFloat(row.v) : NaN;
+      return isNaN(v) ? undefined : v;
+    }
+    if (id === 'collision') {
+      const row = data.find(r => r.l === 'Сохр. импульса');
+      return row ? parseFloat(row.v) : undefined;
+    }
+    return undefined;
+  },
+
+  _bindUI() {
+    document.getElementById('exp-nav').addEventListener('click', e => {
+      const btn = e.target.closest('.exp-tab');
+      if (btn) this.load(+btn.dataset.i);
+    });
+    document.getElementById('btnP').addEventListener('click', () => {
+      const isPendulum = EXPS[this.expIdx].id === 'pendulum';
+      if (!this.running && this.exp.done() && !isPendulum) {
+        this.reset(); return;
+      }
+      this.running = !this.running;
+      ui.setPlay(this.running);
+      if (this.running) this.lastT = null;
+    });
+    document.getElementById('btnR').addEventListener('click', () => this.reset());
+  },
+
+  _resize() {
+    const vp = document.querySelector('.vp-wrap');
+    const w = vp.clientWidth, h = vp.clientHeight;
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  },
+
+  _loop(now = 0) {
+    requestAnimationFrame(t => this._loop(t));
+
+    // Physics update
+    if (this.running && this.exp) {
+      if (this.lastT === null) this.lastT = now;
+      const dt = Math.min((now - this.lastT) / 1000, 0.04);
+      this.lastT = now;
+
+      // Sub-step for accuracy (4 steps)
+      for (let i = 0; i < 4; i++) this.exp.update(dt / 4);
+      this.simT += dt;
+
+      const isPendulum = EXPS[this.expIdx].id === 'pendulum';
+      const data = this.exp.data();
+      if (this.exp.done() && !isPendulum) {
+        this.running = false;
+        ui.setPlay(false);
+        ui.setHUD(this.simT, '✓ Эксперимент завершён');
+        this.liveResult = this._extractLiveMetric(data);
+        ui.setCmp(EXPS[this.expIdx].paperKey, this.liveResult);
+      } else {
+        ui.setHUD(this.simT, isPendulum ? 'Маятник колеблется' : 'Симуляция выполняется…');
+        // Update pendulum live metric continuously
+        if (isPendulum) {
+          const lr = this._extractLiveMetric(data);
+          if (lr !== undefined) ui.setCmp(EXPS[this.expIdx].paperKey, lr);
+        }
+      }
+      ui.setMeas(data);
+    }
+
+    // Drift accent light for atmosphere
+    pntL.position.x = Math.sin(now * 0.0004) * 5;
+    pntL.position.z = Math.cos(now * 0.0004) * 3;
+
+    renderer.render(scene, camera);
+  }
+};
+
+app.init();
+</script>
+</body>
+</html>
